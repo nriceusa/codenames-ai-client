@@ -78,9 +78,7 @@ def play_game(sio: socketio.SimpleClient, code: str, team: str, ai) -> None:
 # ** Instantiate your AI here! ********
 def getAI():
     """Entry point for the game engine to get an AI agent."""
-    # return W2VSpymaster(W2VAssoc())
-    # return MySpymaster(MyAssoc(), debug=True)
-    return MySpymaster(MyAssoc())
+    return MySpymaster(MyAssoc(), debug=False)
 
 
 def main():

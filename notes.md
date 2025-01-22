@@ -4,6 +4,7 @@
 - Attempt to have a model "reason," going "step by step."
 - Measure the mean-squared distance of each word-vector to the others, choose two words that are the closest to each other, and present a clue word that is the closest to the middle.
 - Present clues to a model until it's able to successfully guess the right word. Then present that clue to the user.
+    - Prompt the model first for a word, then prompt it again to output exclusively the word (to isolate it from other text)
 - Algorithmically compare edges between positive words to determine whether they pass too closely to negative words.
 
 ## Llama Download URL

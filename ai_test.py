@@ -51,7 +51,6 @@ def loadWords(filename="word_list.txt"):
 # ** Instantiate your AI here! ********
 def getAI():
     """Entry point for the game engine to get an AI agent."""
-    # return W2VSpymaster(W2VAssoc())
     return MySpymaster(MyAssoc(), debug=True)
 
 
