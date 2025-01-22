@@ -2,8 +2,10 @@ from base.assoc import Assoc
 from base.constants import Team
 from base.spymaster import BaseSpymaster
 
+from itertools import combinations
 import requests
 import json
+from pprint import pprint
 
 url = "http://localhost:11434/api/chat"
 
@@ -25,34 +27,7 @@ class MyAssoc(Assoc):
         Returns:
             List of (word, score) tuples
         """
-        prompt = """
-We are playing a game of Codenames. I need to find words that are associated with these words:
-{pos}
-
-But they should not be associated with the words:
-{neg}
-
-Respond with two words that are associated with the first list but not the second list. The last two words of your response will be used.
-"""
-
-        data = {
-            "model": "llama3",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "stream": False,
-        }
-
-        headers = {
-            "Content-Type": "application/json"
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-
-        return [response.json()['message']['content'], 1]
+        pass
         
 
     def preprocess(self, w):
@@ -72,6 +47,30 @@ class MySpymaster(BaseSpymaster):
     def __init__(self, assoc, debug=False):
         super().__init__(assoc)
         self.debug = debug
+
+    def askLlama(self, prompt, messages=[]):
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+
+        data = {
+            "model": "llama3",
+            "messages": messages,
+            "stream": False,
+        }
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        messages.append(response.json()['message'])
+        if self.debug:
+            pprint(response.json())
+
+        return response.json()['message']['content'], messages
+    
+
     
     def makeClue(self, board, team: Team):
         """
@@ -103,39 +102,40 @@ class MySpymaster(BaseSpymaster):
         # Step 3: Create negative word list (words we want to avoid)
         # Combines opponent's words with neutral ('N') and assassin ('A') words
         # These are words our clue should NOT be similar to
-        neg = board["N"] + board["A"] + opponent_words
+        negative_words = board["N"] + board["A"] + opponent_words
         # Create positive word list (words we want to target)
-        pos = my_words
+        positive_words = my_words
         
-        prompt = """
-We are playing a game of Codenames. I need to find a clue that is associated with these words:
-{pos}
+        # Step 4: Generate subsets
+        sets = [
+            list(subset) for set_size in range(1, 3) for subset in combinations(positive_words, set_size)
+        ]
 
-But it should not be associated with the words:
-{neg}
+        pprint(sets)
+        
+        for subset in sets:
+            prompt = f"You and a teammate are playing Codenames. You are the spymaster. Give me a clue to pass to your teammate for the word"
+            
+            if len(subset) == 1:
+                prompt += f" {subset[0].upper()}. "
+            elif len(subset) == 2:
+                prompt += f"s {subset[0].upper()} and {subset[1].upper()}. "
+            elif len(subset) == 3:
+                prompt += f"s {subset[0].upper()}, {subset[1].upper()}, and {subset[2].upper()}. "
+            
+            prompt += "The clue must be a single word and cannot contain any word already on the table. A good hint will trigger your teammate to think of "
+            
+            if len(subset) == 1:
+                prompt += f"the word {subset[0].upper()} and select it "
+            elif len(subset) == 2:
+                prompt += f"the words {subset[0].upper()} and {subset[1].upper()} and select them "
+            elif len(subset) == 3:
+                prompt += f"the words {subset[0].upper()}, {subset[1].upper()}, and {subset[2].upper()} and select them "
 
-Respond with a single word that is associated with two words in the first list but not the second list. Do not respond with a word that is on the board. Your response must be only one world long.
-"""
+            prompt += "from a table with various other words on it. Be succinct."
 
-        data = {
-            "model": "llama3",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "stream": False,
-        }
+            print("prompt:", prompt)
 
-        headers = {
-            "Content-Type": "application/json"
-        }
+            answer, _ = self.askLlama(prompt)
 
-        response = requests.post(url, headers=headers, json=data)
-
-        if self.debug:
-            print('pos:', pos)
-            print('response:', response.json()['message']['content'])
-
-        return (response.json()['message']['content'], 2), {}
+        return (answer, 2), {}

@@ -17,3 +17,26 @@ python3 client.py WDYY red
 python3 client.py WDYY blue
 
 Website: https://mind.cs.byu.edu/codenames/game?code=WDYY&role=spymaster&team=red
+
+## Ollama prompts
+```
+curl http://localhost:11434/api/chat -d '{
+  "model": "llama3",
+  "stream": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "why is the sky blue?"
+    },
+    {
+      "role": "assistant",
+      "content": "due to rayleigh scattering."
+    },
+    {
+      "role": "user",
+      "content": "how is that different than mie scattering?"
+    }
+  ],
+  "max_tokens": 5
+}'
+```
