@@ -29,9 +29,9 @@ answers).
 spymaster_intro = """You are playing as the spymaster. You must do the following to provide your teammate with a good clue:
     1.	Identify Team Words: Review your team’s words on the key card.
     2.	Find Connections: Look for common themes, categories, or associations among multiple team words.
-    3.	Avoid Opponent/Assassin Words: Ensure your hint doesn’t lead to opponent words or the assassin.
+    3.	Avoid Opponent/Assassin Words: Ensure your clue doesn’t lead to opponent words or the assassin.
     4.	Choose One Word: Select a single, clear word that connects as many of your team’s words as possible.
-    5.	Pick a Number: Indicate how many team words your hint relates to.
+    5.	Pick a Number: Indicate how many team words your clue relates to.
     6.	Think Abstractly: Be creative but ensure your team can logically make the connection.
     7.	Avoid Forbidden Words: Do not use any form or variation of the words on the board."""
 
@@ -102,7 +102,7 @@ class MySpymaster(BaseSpymaster):
 
 Your teammate has provided you with the clue {clue}. These are the words on the table: {board_words}
 
-Select {len(intended_words)} word(s) from the table as your guesses.
+Select {len(intended_words)} word(s) from the table as your guess(es).
 """
         answer, conversation = self.askLlama(prompt)
 
@@ -161,7 +161,7 @@ Select {len(intended_words)} word(s) from the table as your guesses.
         effective_clue = False
         while not effective_clue:
             prompt = codenames_intro + "\n\n" + spymaster_intro + "\n\nHere are your team’s words:\n" + str(positive_words)
-            prompt += "\n\nHow many words would you like to provide a hint for? Respond with 1, 2 or 3. Say nothing else."
+            prompt += "\n\nHow many words would you like to provide a clue for? Respond with 1, 2 or 3. Say nothing else."
             answer, conversation = self.askLlama(prompt)
             num_words = int(answer)
 
@@ -203,7 +203,7 @@ Select {len(intended_words)} word(s) from the table as your guesses.
             effective_clue = self.evaluateClue(clue, board_words, intended_words)
 
             if not effective_clue:
-                print("Ineffective clue. Still thinking...")
+                print("Still thinking...")
         
         for i in range(len(intended_words)):
             intended_words[i] = intended_words[i].upper()

@@ -36,7 +36,7 @@ def create_board(state: Dict) -> Dict[str, List[str]]:
 def make_clue(ai, board: Dict[str, List[str]], code: str, team: Team) -> Dict:
     clue, intended_words = ai.makeClue(board, team)
     print(f"Clue: {clue}")
-    print("Intended words:", *intended_words, sep="\n\t")
+    # print("Intended words:", *intended_words, sep="\n\t")f
 
     response = requests.post(
         MAKE_CLUE_URL,
