@@ -9,6 +9,23 @@ from pprint import pprint
 
 url = "http://localhost:11434/api/chat"
 
+rules = """Here are the basic rules of Codenames:
+
+**Objective:**
+Guess the location of words on a grid based on one-word clues given by your 
+teammate.
+
+**Gameplay:**
+1. Each team chooses a Spymaster and Field Agents.
+2. The Spymasters take turns giving one-word clues that relate to multiple words on the 
+grid.
+3. Field Agents try to find the correct words on the grid based on their Spymaster's 
+clue.
+4. Words can be associated with multiple clues, but some words are "assassins" (wrong 
+answers).
+5. Teams score points for correctly identified words and lose points for assassins.
+6. The team with the most points wins.
+"""
 
 class MyAssoc(Assoc):
     def __init__(self):
@@ -136,6 +153,6 @@ class MySpymaster(BaseSpymaster):
 
             print("prompt:", prompt)
 
-            answer, _ = self.askLlama(prompt)
+        answer, _ = self.askLlama(prompt)
 
         return (answer, 2), {}
