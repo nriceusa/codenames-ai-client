@@ -35,6 +35,8 @@ spymaster_intro = """You are playing as the spymaster. You must do the following
     6.	Think Abstractly: Be creative but ensure your team can logically make the connection.
     7.	Avoid Forbidden Words: Do not use any form or variation of the words on the board."""
 
+guesser_intro = """You are playing as the guesser."""
+
 class MyAssoc(Assoc):
     def __init__(self):
         super().__init__()
@@ -95,7 +97,32 @@ class MySpymaster(BaseSpymaster):
 
         return response.json()['message']['content'], messages
     
+    def evaluateClue(self, clue, board_words, intended_words):
+        prompt = codenames_intro + "\n\n" + guesser_intro + f"""
 
+Your teammate has provided you with the clue {clue}. These are the words on the table: {board_words}
+
+Select {len(intended_words)} word(s) from the table as your guesses.
+"""
+        answer, conversation = self.askLlama(prompt)
+
+        if len(intended_words) == 1:
+            prompt = "What is the word you would like to guess? Say only the word."
+            guess, conversation = self.askLlama(prompt, conversation)
+            return True if guess in intended_words else False
+        else:
+            prompt = "What is the first word you would like to guess? Say only the word."
+            first_guess, conversation = self.askLlama(prompt, conversation)
+            if first_guess not in intended_words:
+                return False
+            
+            for i in range(1, len(intended_words)):
+                prompt = "What is the next word you would like to guess? Say only the word."
+                next_guess, conversation = self.askLlama(prompt, conversation)
+                if next_guess not in intended_words:
+                    return False
+            
+            return True
     
     def makeClue(self, board, team: Team):
         """
@@ -140,12 +167,12 @@ class MySpymaster(BaseSpymaster):
             "teammate for them?"
         answer, conversation = self.askLlama(prompt, conversation)
         
-        words = []
+        intended_words = []
         if num_words == 1:
             prompt = "What is the word? Say only the word."
             word, conversation = self.askLlama(prompt, conversation)
 
-            words.append(word)
+            intended_words.append(word)
 
         elif num_words == 2:
             prompt = "What is the first word? Say only the word."
@@ -153,8 +180,8 @@ class MySpymaster(BaseSpymaster):
             prompt = "What is the second word? Say only the word."
             second_word, conversation = self.askLlama(prompt, conversation)
 
-            words.append(first_word)
-            words.append(second_word)
+            intended_words.append(first_word)
+            intended_words.append(second_word)
 
         elif num_words == 3:
             prompt = "What is the first word? Say only the word."
@@ -164,11 +191,14 @@ class MySpymaster(BaseSpymaster):
             prompt = "What is the third word? Say only the word."
             third_word, conversation = self.askLlama(prompt, conversation)
 
-            words.append(first_word)
-            words.append(second_word)
-            words.append(third_word)
+            intended_words.append(first_word)
+            intended_words.append(second_word)
+            intended_words.append(third_word)
         
         prompt = "What is the clue? Say only the clue."
         clue, _ = self.askLlama(prompt, conversation)
 
-        return (clue, num_words), words
+        effective = self.evaluateClue(clue, board_words, intended_words)
+        print(f"Effectiveness: {effective}")
+
+        return (clue.lower(), num_words), intended_words
