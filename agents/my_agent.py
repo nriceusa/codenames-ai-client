@@ -158,47 +158,54 @@ Select {len(intended_words)} word(s) from the table as your guesses.
         # Create positive word list (words we want to target)
         positive_words = my_words
         
-        prompt = codenames_intro + "\n\n" + spymaster_intro + "\n\nHere are your team’s words:\n" + str(positive_words)
-        prompt += "\n\nHow many words would you like to provide a hint for? Respond with 1, 2 or 3. Say nothing else."
-        answer, conversation = self.askLlama(prompt)
-        num_words = int(answer)
+        effective_clue = False
+        while not effective_clue:
+            prompt = codenames_intro + "\n\n" + spymaster_intro + "\n\nHere are your team’s words:\n" + str(positive_words)
+            prompt += "\n\nHow many words would you like to provide a hint for? Respond with 1, 2 or 3. Say nothing else."
+            answer, conversation = self.askLlama(prompt)
+            num_words = int(answer)
 
-        prompt = "What " + str(num_words) + "word(s) would you like to select and what clue would you like to offer your "\
-            "teammate for them?"
-        answer, conversation = self.askLlama(prompt, conversation)
+            prompt = "What " + str(num_words) + "word(s) would you like to select and what clue would you like to offer your "\
+                "teammate for them?"
+            answer, conversation = self.askLlama(prompt, conversation)
+            
+            intended_words = []
+            if num_words == 1:
+                prompt = "What is the word? Say only the word."
+                word, conversation = self.askLlama(prompt, conversation)
+
+                intended_words.append(word)
+
+            elif num_words == 2:
+                prompt = "What is the first word? Say only the word."
+                first_word, conversation = self.askLlama(prompt, conversation)
+                prompt = "What is the second word? Say only the word."
+                second_word, conversation = self.askLlama(prompt, conversation)
+
+                intended_words.append(first_word)
+                intended_words.append(second_word)
+
+            elif num_words == 3:
+                prompt = "What is the first word? Say only the word."
+                first_word, conversation = self.askLlama(prompt, conversation)
+                prompt = "What is the second word? Say only the word."
+                second_word, conversation = self.askLlama(prompt, conversation)
+                prompt = "What is the third word? Say only the word."
+                third_word, conversation = self.askLlama(prompt, conversation)
+
+                intended_words.append(first_word)
+                intended_words.append(second_word)
+                intended_words.append(third_word)
+            
+            prompt = "What is the clue? Say only the clue."
+            clue, _ = self.askLlama(prompt, conversation)
+
+            effective_clue = self.evaluateClue(clue, board_words, intended_words)
+
+            if not effective_clue:
+                print("Ineffective clue. Still thinking...")
         
-        intended_words = []
-        if num_words == 1:
-            prompt = "What is the word? Say only the word."
-            word, conversation = self.askLlama(prompt, conversation)
-
-            intended_words.append(word)
-
-        elif num_words == 2:
-            prompt = "What is the first word? Say only the word."
-            first_word, conversation = self.askLlama(prompt, conversation)
-            prompt = "What is the second word? Say only the word."
-            second_word, conversation = self.askLlama(prompt, conversation)
-
-            intended_words.append(first_word)
-            intended_words.append(second_word)
-
-        elif num_words == 3:
-            prompt = "What is the first word? Say only the word."
-            first_word, conversation = self.askLlama(prompt, conversation)
-            prompt = "What is the second word? Say only the word."
-            second_word, conversation = self.askLlama(prompt, conversation)
-            prompt = "What is the third word? Say only the word."
-            third_word, conversation = self.askLlama(prompt, conversation)
-
-            intended_words.append(first_word)
-            intended_words.append(second_word)
-            intended_words.append(third_word)
-        
-        prompt = "What is the clue? Say only the clue."
-        clue, _ = self.askLlama(prompt, conversation)
-
-        effective = self.evaluateClue(clue, board_words, intended_words)
-        print(f"Effectiveness: {effective}")
+        for i in range(len(intended_words)):
+            intended_words[i] = intended_words[i].upper()
 
         return (clue.lower(), num_words), intended_words
