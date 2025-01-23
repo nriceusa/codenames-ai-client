@@ -9,7 +9,7 @@ from pprint import pprint
 
 url = "http://localhost:11434/api/chat"
 
-rules = """Here are the basic rules of Codenames:
+codenames_intro = """We are playing a game of Codenames. Here are the rules:
 
 **Objective:**
 Guess the location of words on a grid based on one-word clues given by your 
@@ -24,8 +24,16 @@ clue.
 4. Words can be associated with multiple clues, but some words are "assassins" (wrong 
 answers).
 5. Teams score points for correctly identified words and lose points for assassins.
-6. The team with the most points wins.
-"""
+6. The team with the most points wins."""
+
+spymaster_intro = """You are playing as the spymaster. You must do the following to provide your teammate with a good clue:
+    1.	Identify Team Words: Review your team’s words on the key card.
+    2.	Find Connections: Look for common themes, categories, or associations among multiple team words.
+    3.	Avoid Opponent/Assassin Words: Ensure your hint doesn’t lead to opponent words or the assassin.
+    4.	Choose One Word: Select a single, clear word that connects as many of your team’s words as possible.
+    5.	Pick a Number: Indicate how many team words your hint relates to.
+    6.	Think Abstractly: Be creative but ensure your team can logically make the connection.
+    7.	Avoid Forbidden Words: Do not use any form or variation of the words on the board."""
 
 class MyAssoc(Assoc):
     def __init__(self):
@@ -123,36 +131,44 @@ class MySpymaster(BaseSpymaster):
         # Create positive word list (words we want to target)
         positive_words = my_words
         
-        # Step 4: Generate subsets
-        sets = [
-            list(subset) for set_size in range(1, 3) for subset in combinations(positive_words, set_size)
-        ]
+        prompt = codenames_intro + "\n\n" + spymaster_intro + "\n\nHere are your team’s words:\n" + str(positive_words)
+        prompt += "\n\nHow many words would you like to provide a hint for? Respond with 1, 2 or 3. Say nothing else."
+        answer, conversation = self.askLlama(prompt)
+        num_words = int(answer)
 
-        pprint(sets)
+        prompt = "What " + str(num_words) + "word(s) would you like to select and what clue would you like to offer your "\
+            "teammate for them?"
+        answer, conversation = self.askLlama(prompt, conversation)
         
-        for subset in sets:
-            prompt = f"You and a teammate are playing Codenames. You are the spymaster. Give me a clue to pass to your teammate for the word"
-            
-            if len(subset) == 1:
-                prompt += f" {subset[0].upper()}. "
-            elif len(subset) == 2:
-                prompt += f"s {subset[0].upper()} and {subset[1].upper()}. "
-            elif len(subset) == 3:
-                prompt += f"s {subset[0].upper()}, {subset[1].upper()}, and {subset[2].upper()}. "
-            
-            prompt += "The clue must be a single word and cannot contain any word already on the table. A good hint will trigger your teammate to think of "
-            
-            if len(subset) == 1:
-                prompt += f"the word {subset[0].upper()} and select it "
-            elif len(subset) == 2:
-                prompt += f"the words {subset[0].upper()} and {subset[1].upper()} and select them "
-            elif len(subset) == 3:
-                prompt += f"the words {subset[0].upper()}, {subset[1].upper()}, and {subset[2].upper()} and select them "
+        words = []
+        if num_words == 1:
+            prompt = "What is the word? Say only the word."
+            word, conversation = self.askLlama(prompt, conversation)
 
-            prompt += "from a table with various other words on it. Be succinct."
+            words.append(word)
 
-            print("prompt:", prompt)
+        elif num_words == 2:
+            prompt = "What is the first word? Say only the word."
+            first_word, conversation = self.askLlama(prompt, conversation)
+            prompt = "What is the second word? Say only the word."
+            second_word, conversation = self.askLlama(prompt, conversation)
 
-        answer, _ = self.askLlama(prompt)
+            words.append(first_word)
+            words.append(second_word)
 
-        return (answer, 2), {}
+        elif num_words == 3:
+            prompt = "What is the first word? Say only the word."
+            first_word, conversation = self.askLlama(prompt, conversation)
+            prompt = "What is the second word? Say only the word."
+            second_word, conversation = self.askLlama(prompt, conversation)
+            prompt = "What is the third word? Say only the word."
+            third_word, conversation = self.askLlama(prompt, conversation)
+
+            words.append(first_word)
+            words.append(second_word)
+            words.append(third_word)
+        
+        prompt = "What is the clue? Say only the clue."
+        clue, _ = self.askLlama(prompt, conversation)
+
+        return (clue, num_words), words
